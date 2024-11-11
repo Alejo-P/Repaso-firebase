@@ -17,19 +17,26 @@ export class AvatarService {
     return docData(userDocRef, { idField: 'id' });
   }
 
-  async uploadImage(photo: Photo){
+  async uploadImage(photo: Photo) {
     const user = this.auth.currentUser;
-    const path = `uploads/${user!.uid}/avatar.jpg`;
+    const path = `uploads/${user!.uid}/avatar.webp`;
     const storageRef = ref(this.storage, path);
-
+  
     try {
-      await uploadString(storageRef, photo.base64String!, 'data_url');
+      // Agrega el prefijo 'data:image/webp;base64,' si no está presente
+      const base64Data = photo.base64String!.startsWith('data:')
+        ? photo.base64String!
+        : `data:image/webp;base64,${photo.base64String!}`;
+  
+      await uploadString(storageRef, base64Data, 'data_url');
       const url = await getDownloadURL(storageRef);
       const userDocRef = doc(this.firestorage, `users/${user!.uid}`);
-      await setDoc(userDocRef, {avatar: url}, {merge: true});
+      await setDoc(userDocRef, { avatar: url }, { merge: true });
       return true;
     } catch (error) {
+      console.log(error);
       return false;
     }
   }
+  
 }
